@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:websocket="http://www.mulesoft.org/schema/mule/websocket" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/websocket http://www.mulesoft.org/schema/mule/websocket/current/mule-websocket.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="98669760-8079-4f2a-8558-3ee55aa4cc5c" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<websocket:config name="WebSockets_Config" doc:name="WebSockets Config" doc:id="1803e78e-55b1-40b4-af9b-c91e63cd2275" >
+		<websocket:connection >
+			<websocket:server-settings listenerConfig="HTTP_Listener_config" />
+			<websocket:client-settings host="http://localhost" port="8081" />
+		</websocket:connection>
+	</websocket:config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="01fc9d62-46c6-45e0-948d-dc41d48c94d3" />
+	<flow name="websocketsFlow" doc:id="4e5d1890-cfda-4dd9-8cb0-a362afcd45fc" >
+		<websocket:on-inbound-connection doc:name="On New Inbound Connection" doc:id="0656f48c-d8ef-443b-87f1-3017d73191da" config-ref="WebSockets_Config" path="/wsserver/matchfeed"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a99862a9-26ef-4d3b-bacc-d79025be4221" />
+		<choice doc:name="Choice" doc:id="0c784e5c-ab81-4c6f-95c1-a4f0a7cd00e0" >
+			<when expression="#[attributes.headers.authorization_key == “admin@12345”]">
+				<logger level="INFO" doc:name="Logger" doc:id="abd59786-92d0-4d58-8543-b7006e814d83" />
+				<websocket:send doc:name="Send" doc:id="74738139-236f-46f9-965d-a2502349a76f" />
+			</when>
+			<otherwise >
+				<websocket:close-socket doc:name="Close socket" doc:id="c9b06617-eb45-4141-822b-2888b8683df4" />
+				<logger level="INFO" doc:name="Logger" doc:id="b014507b-23e7-4f8b-936b-0881f036a9ce" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="websocketsFlow1" doc:id="bf3b232d-f65e-46d3-a876-6190001216d2" >
+		<websocket:inbound-listener doc:name="On New Inbound Message" doc:id="bddf8529-46ca-40fd-bab2-af375d2b6e35" config-ref="WebSockets_Config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b3a675c7-4046-47c6-ab01-118f80b077b6" />
+		<ee:transform doc:name="Transform Message" doc:id="d0acfd60-2cf4-46d0-aaf5-d3745895fdd9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="b1939100-b146-47ef-9627-a8ccf4ecadb3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<os:store doc:name="Store" doc:id="8c4414ad-7e9d-4757-90e2-7d45b9200657" key="objs" objectStore="Object_store"/>
+	</flow>
+</mule>
